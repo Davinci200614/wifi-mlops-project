@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: 1. Cloner le dépôt
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: 2. Configurer Python
       uses: actions/setup-python@v4
@@ -29,7 +29,7 @@ jobs:
         python src/models/train_model.py
 
     - name: 5. Sauvegarder le modèle généré
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: trained-model
         path: models/model.joblib
