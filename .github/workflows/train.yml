@@ -1,12 +1,18 @@
-name: Wi-Fi MLOps Training Pipeline
+name: Wi-Fi MLOps Monitor and Train
 
 on:
   push:
-    branches: [ master, main ]
+    branches: [ main, master ]
+  
+  # Déclenchement automatique planifié (ex: tous les jours à minuit UTC)
+  schedule:
+    - cron: '0 0 * * *'
+  
+  # Déclenchement manuel
   workflow_dispatch:
 
 jobs:
-  train-model:
+  check-and-train:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,11 +30,20 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: 4. Exécuter l'entraînement du modèle
+    - name: 4. Évaluer le modèle (Monitoring)
+      id: eval
+      continue-on-error: true   # Empêche GitHub de bloquer immédiatement si le script fait exit(1)
       run: |
+        python src/models/evaluate.py
+
+    - name: 5. Ré-entraîner le modèle (En cas de drift / échec de l'évaluation)
+      if: steps.eval.outcome == 'failure'
+      run: |
+        echo "⚠️ Drift ou baisse de performance détectée ! Lancement du ré-entraînement..."
         python src/models/train_model.py
 
-    - name: 5. Sauvegarder le modèle généré
+    - name: 6. Sauvegarder le nouveau modèle généré
+      if: steps.eval.outcome == 'failure'
       uses: actions/upload-artifact@v4
       with:
         name: trained-model
